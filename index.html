@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <!-- TAMBAHAN 1: Meta Viewport agar Auto-Devices (Responsive di HP) -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Gantungan Kunci AI Sempurna</title>
+    <style>
+        /* BACKGROUND & LAYOUT */
+        body { background: #050505; color: #00ffcc; text-align: center; font-family: 'Courier New', Courier, monospace; margin: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; overflow: hidden; }
+        .main-container { display: flex; flex-direction: column; align-items: center; justify-content: flex-start; z-index: 5; width: 100%; max-width: 650px; height: 90vh; padding-top: 5vh; box-sizing: border-box; }
+
+        /* HANYA 2 LED ANTENA (BERSIH DARI TEKS STATUS) */
+        .status-panel { margin-bottom: 20px; display: flex; flex-direction: column; align-items: center; }
+        .led-panel { display: flex; gap: 15px; margin-bottom: 10px; }
+        .led { width: 14px; height: 14px; border-radius: 50%; background: #333; transition: 0.3s; }
+        .led.mic-on { background: #34c759; box-shadow: 0 0 15px #34c759; }
+        .led.ai-on { background: #ff9800; box-shadow: 0 0 15px #ff9800; animation: pulse 0.5s infinite alternate; }
+        .led.error { background: #ff3333; box-shadow: 0 0 20px #ff3333; animation: blinkFast 0.2s infinite; }
+        @keyframes pulse { from { opacity: 0.3; } to { opacity: 1; } }
+        @keyframes blinkFast { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
+        /* WAJAH ROBOT */
+        .face { width: 280px; height: 280px; background: #fff; border-radius: 35px; position: relative; box-shadow: 0 0 40px rgba(255,255,255,0.1); cursor: pointer; transition: 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); flex-shrink: 0; }
+        .face.listening { box-shadow: 0 0 60px rgba(52, 199, 89, 0.6); transform: scale(1.05); border: 4px solid #34c759; }
+        .face.angry-mode { box-shadow: 0 0 60px rgba(255,51,51,0.6); border: 4px solid #ff3333; animation: shakeError 0.2s infinite; }
+        @keyframes shakeError { 0% { transform: translate(4px, 4px) rotate(1deg); } 50% { transform: translate(-4px, -4px) rotate(-1deg); } 100% { transform: translate(4px, -4px) rotate(1deg); } }
+
+        /* MATA PROPORSIONAL (TRANSISI DIBUAT SANGAT LENTUR) */
+        .eye { width: 85px; height: 95px; background: #111; position: absolute; top: 90px; border-radius: 12px; transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55); transform-origin: center; }
+        .eye.left { left: 40px; } .eye.right { right: 40px; }
+        
+        /* EKSPRESI WAJAH SAAT BICARA (MENGIKUTI EMOSI AI) */
+        .eye.happy { height: 35px; top: 115px; border-radius: 20px 20px 5px 5px; } 
+        .eye.angry { height: 50px; top: 100px; transform: rotate(15deg); } .eye.angry.left { transform: rotate(-15deg); }
+        .eye.sad { height: 70px; top: 95px; transform: rotate(-15deg); } .eye.sad.left { transform: rotate(15deg); }
+        .eye.bored { height: 15px; top: 125px; opacity: 0.6; }
+        .eye.curious { height: 105px; width: 75px; } .eye.curious.right { width: 105px; height: 75px; top: 105px; }
+        .eye.smug.left { height: 105px; top: 90px; } .eye.smug.right { height: 30px; top: 125px; } 
+        .eye.closed { height: 4px; top: 135px; } 
+        
+        /* EKSPRESI MIKIR (NGELIRIK KE ATAS) */
+        .eye.thinking { transform: translate(15px, -15px); }
+        .eye.thinking.left { transform: translate(15px, -15px); }
+
+        /* AREA TEKS GULIR (BERSIH TOTAL SAAT DIAM) */
+        .text-area { width: 90%; margin-top: 30px; display: flex; flex-direction: column; align-items: center; }
+        .transcript { font-size: 14px; color: #888; font-style: italic; margin-bottom: 10px; min-height: 20px; }
+        
+        .reply-wrapper { width: 100%; max-height: 120px; overflow-y: auto; text-align: center; padding-right: 5px; }
+        .reply-wrapper::-webkit-scrollbar { width: 5px; } 
+        .reply-wrapper::-webkit-scrollbar-track { background: rgba(0,0,0,0.5); border-radius: 5px; }
+        .reply-wrapper::-webkit-scrollbar-thumb { background: #00ffcc; border-radius: 5px; }
+        
+        #replyBox { font-size: 22px; color: #fff; font-weight: bold; line-height: 1.4; text-shadow: 0 0 10px rgba(255,255,255,0.3); word-wrap: break-word; min-height: 30px; }
+        .cursor { display: inline-block; width: 10px; height: 22px; background: #fff; animation: blink 0.8s infinite; margin-left: 5px; vertical-align: middle; }
+
+        /* --- TAMBAHAN 2: KODE CSS AUTO-DEVICES (RESPONSIVE) --- */
+        /* Kalau dibuka di tablet / layar agak kecil */
+        @media screen and (max-width: 600px) {
+            .main-container { transform: scale(0.85); transform-origin: center top; padding-top: 2vh; }
+            #replyBox { font-size: 20px; }
+        }
+        /* Kalau dibuka di HP / layar sangat kecil */
+        @media screen and (max-width: 400px) {
+            .main-container { transform: scale(0.7); transform-origin: center top; padding-top: 2vh; }
+            #replyBox { font-size: 18px; }
+        }
+        /* ------------------------------------------------------ */
+    </style>
+</head>
+<body>
+
+    <div class="main-container" id="mainContainer">
+        <!-- HANYA 2 LED ANTENA -->
+        <div class="status-panel">
+            <div class="led-panel">
+                <div class="led" id="ledMic" title="Mic"></div>
+                <div class="led" id="ledAi" title="System"></div>
+            </div>
+        </div>
+
+        <!-- WAJAH ROBOT -->
+        <div class="face" id="robotFace" onclick="toggleMic()" title="Klik Untuk Bicara">
+            <div class="eye left neutral" id="eyeLeft"></div>
+            <div class="eye right neutral" id="eyeRight"></div>
+        </div>
+
+        <!-- AREA TEKS -->
+        <div class="text-area">
+            <div class="transcript" id="transcriptBox"></div>
+            <div class="reply-wrapper" id="replyWrapper">
+                <div id="replyBox"></div> 
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // KODE JS INI SAMA PERSIS 100% SEPERTI SEBELUMNYA, TIDAK ADA YANG SAYA RUBAH.
+        let audioCtx;
+        function initAudio() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        }
+
+        function playBeep(type = 'typing') {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            let now = audioCtx.currentTime;
+
+            if (type === 'happy' || type === 'smug') {
+                osc.type = 'sine'; osc.frequency.setValueAtTime(1200, now); osc.frequency.exponentialRampToValueAtTime(2000, now + 0.15);
+                gain.gain.setValueAtTime(0.3, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+                osc.start(now); osc.stop(now + 0.2);
+            } else if (type === 'error') {
+                osc.type = 'sawtooth'; osc.frequency.setValueAtTime(400, now); osc.frequency.exponentialRampToValueAtTime(150, now + 0.3);
+                gain.gain.setValueAtTime(0.4, now); gain.gain.linearRampToValueAtTime(0, now + 0.3);
+                osc.start(now); osc.stop(now + 0.3);
+            } else if (type === 'idle') {
+                const types = ['sine', 'triangle']; osc.type = types[Math.floor(Math.random() * types.length)];
+                osc.frequency.setValueAtTime(900 + Math.random() * 600, now);
+                gain.gain.setValueAtTime(0.15, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                osc.start(now); osc.stop(now + 0.1);
+            } else {
+                osc.type = 'sine'; osc.frequency.setValueAtTime(1000 + Math.random() * 500, now);
+                gain.gain.setValueAtTime(0.2, now); 
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
+                osc.start(now); osc.stop(now + 0.05);
+            }
+        }
+
+        const face = document.getElementById('robotFace');
+        const eyeL = document.getElementById('eyeLeft');
+        const eyeR = document.getElementById('eyeRight');
+        const ledMic = document.getElementById('ledMic');
+        const ledAi = document.getElementById('ledAi');
+        
+        let currentEmotion = 'neutral'; 
+        let isSpeaking = false; 
+        let isListening = false; 
+        let idleTimer = 0;
+
+        const idleAnimations = [
+            {l: 'translate(-25px, 0)', r: 'translate(-25px, 0)'}, 
+            {l: 'translate(25px, 0)', r: 'translate(25px, 0)'},   
+            {l: 'translate(0, -25px)', r: 'translate(0, -25px)'}, 
+            {l: 'translate(0, 25px)', r: 'translate(0, 25px)'},   
+            {l: 'scale(1, 0.4)', r: 'scale(1, 0.4)'},             
+            {l: 'scale(1.2, 1.2)', r: 'scale(1.2, 1.2)'},         
+            {l: 'scale(1, 0.1)', r: 'scale(1, 1)'},               
+            {l: 'scale(1, 1)', r: 'scale(1, 0.1)'},               
+            {l: 'translate(15px, 0)', r: 'translate(-15px, 0)'},  
+            {l: 'translate(-15px, 0)', r: 'translate(15px, 0)'},  
+            {l: 'rotate(-20deg)', r: 'rotate(-20deg)'},           
+            {l: 'rotate(20deg)', r: 'rotate(20deg)'},             
+            {l: 'scale(0.6, 0.6)', r: 'scale(1.2, 1.2)'},         
+            {l: 'scale(1.2, 1.2)', r: 'scale(0.6, 0.6)'},         
+            {l: 'translate(0, 15px) scale(1, 0.5)', r: 'translate(0, 15px) scale(1, 0.5)'}, 
+            {l: 'translate(10px, -10px) scale(0.6, 0.6)', r: 'translate(-10px, -10px) scale(0.6, 0.6)'}, 
+            {l: 'translate(0, -15px) rotate(15deg)', r: 'translate(0, -15px) rotate(15deg)'}, 
+            {l: 'scale(0.8, 0.9)', r: 'scale(0.8, 0.9)'},         
+            {l: 'translate(0, -15px)', r: 'translate(0, 15px)'},  
+            {l: 'none', r: 'none'}                                
+        ];
+
+        function setEmotion(emo) {
+            currentEmotion = emo; 
+            face.className = 'face'; 
+            if(isListening) face.classList.add('listening');
+            
+            eyeL.style.transform = 'none'; 
+            eyeR.style.transform = 'none';
+            
+            eyeL.className = `eye left ${emo}`; 
+            eyeR.className = `eye right ${emo}`;
+            
+            if(emo === 'error') face.classList.add('angry-mode');
+        }
+
+        setInterval(() => {
+            if (!isSpeaking && !isListening) {
+                idleTimer++;
+                if (idleTimer % 3 === 0 && currentEmotion === 'neutral') {
+                    const anim = idleAnimations[Math.floor(Math.random() * idleAnimations.length)];
+                    eyeL.style.transform = anim.l;
+                    eyeR.style.transform = anim.r;
+                    if(Math.random() > 0.4) playBeep('idle');
+                }
+                if (idleTimer >= 30) setEmotion('bored');
+            }
+        }, 1000);
+
+        function resetIdle() { 
+            idleTimer = 0; 
+            if (currentEmotion === 'bored') setEmotion('neutral'); 
+        }
+
+        function blink() {
+            if (!isSpeaking && currentEmotion !== 'bored' && currentEmotion !== 'thinking' && eyeL.style.transform === 'none') {
+                eyeL.classList.add('closed'); eyeR.classList.add('closed');
+                setTimeout(() => { eyeL.classList.remove('closed'); eyeR.classList.remove('closed'); }, 150);
+            }
+            setTimeout(blink, Math.random() * 3000 + 1500);
+        }
+        setTimeout(blink, 1000);
+
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        let recognition; 
+
+        if (SpeechRecognition) {
+            recognition = new SpeechRecognition(); recognition.lang = 'id-ID'; recognition.continuous = false;
+            
+            recognition.onstart = function() {
+                isListening = true; resetIdle();
+                face.classList.add('listening');
+                document.getElementById('transcriptBox').innerText = "";
+                document.getElementById('replyBox').innerHTML = "";
+                ledMic.classList.add('mic-on');
+                ledAi.className = 'led'; 
+                setEmotion('curious'); playBeep('happy');
+            };
+
+            recognition.onresult = function(event) { 
+                document.getElementById('transcriptBox').innerText = `[User]: "${event.results[0][0].transcript}"`;
+                askGemini(event.results[0][0].transcript); 
+            };
+
+            recognition.onerror = function(event) { triggerError(); };
+            recognition.onend = function() { isListening = false; face.classList.remove('listening'); ledMic.classList.remove('mic-on'); };
+        }
+
+        function toggleMic() {
+            initAudio(); 
+            if (isListening) recognition.stop(); else { document.getElementById('replyBox').innerHTML = ""; recognition.start(); }
+        }
+
+        async function askGemini(userText) {
+            ledAi.className = 'led ai-on';
+            setEmotion("thinking"); 
+            playBeep('idle');
+            
+            try {
+                const response = await fetch('/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: userText || "" }) });
+                const data = await response.json();
+                
+                if(data.text.includes("ter-reset") || data.text.includes("ERROR") || data.text.includes("mati") || data.text.includes("down")) {
+                    triggerError(data.text);
+                } else {
+                    ledAi.className = 'led';
+                    setEmotion(data.emotion); 
+                    typeTextAuto(data.text, data.emotion);
+                }
+            } catch (error) {
+                triggerError("Bip! Jaringanku mati Bang.");
+            }
+        }
+
+        function triggerError(replyMsg = "") {
+            ledAi.className = 'led error';
+            setEmotion('error'); 
+            playBeep('error');
+            
+            if(replyMsg) {
+                document.getElementById('replyBox').style.color = "#ff3333";
+                typeTextAuto(replyMsg, 'error');
+            } else {
+                isListening = false; face.classList.remove('listening'); ledMic.classList.remove('mic-on');
+            }
+        }
+
+        function typeTextAuto(text, emotion = 'neutral') {
+            isSpeaking = true; resetIdle();
+            const rBox = document.getElementById('replyBox');
+            const rWrap = document.getElementById('replyWrapper');
+            
+            if(emotion !== 'error') rBox.style.color = "#fff"; 
+            rBox.innerHTML = ""; 
+            
+            let i = 0; let speed = 35; 
+            function typeWriter() {
+                if (i < text.length) {
+                    let char = text.charAt(i);
+                    rBox.innerHTML = text.substring(0, i + 1) + '<span class="cursor"></span>';
+                    rWrap.scrollTop = rWrap.scrollHeight;
+                    if (i % 2 === 0 && char !== ' ') playBeep('typing');
+                    i++; setTimeout(typeWriter, speed);
+                } else {
+                    isSpeaking = false;
+                    ledAi.className = 'led';
+                    rBox.innerHTML = text; 
+                    
+                    setTimeout(() => {
+                        if (!isSpeaking && !isListening) {
+                            rBox.innerHTML = ""; 
+                            document.getElementById('transcriptBox').innerText = "";
+                            if(currentEmotion !== 'error' && currentEmotion !== 'bored') setEmotion('neutral');
+                        }
+                    }, 5000);
+                }
+            }
+            setTimeout(typeWriter, 200);
+        }
+    </script>
+</body>
+</html>
